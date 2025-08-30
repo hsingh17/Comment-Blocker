@@ -7,7 +7,7 @@
     - Listens for click on context menu
     - Fires block-comment event to content script
     - Stores PFP, account name, and video to storage
-  - On Tab Change/Youtube Video Change
+  - On Tab Change/Youtube Video Change/LOADING of more comments by scrolling (onchange of the comment thread div/container)
     - Send block-comments message to content script
     - Need to update counts in storage of any blocked comments
   - Power on/off
