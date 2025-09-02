@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json.schemastore.org/chrome-manifest",
   "manifest_version": 3,
   "name": "Comment Blocker",
   "version": "1.0",
@@ -8,5 +7,9 @@
     "default_popup": "index.html"
   },
   "permissions": ["unlimitedStorage", "activeTab", "scripting"],
-  "host_permissions": ["http://*", "https://*"]
+  "host_permissions": ["http://*", "https://*"],
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  }
 }
