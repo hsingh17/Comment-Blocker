@@ -6,10 +6,16 @@
   "action": {
     "default_popup": "index.html"
   },
-  "permissions": ["unlimitedStorage", "activeTab", "scripting"],
-  "host_permissions": ["http://*", "https://*"],
+  "permissions": [
+    "unlimitedStorage",
+    "activeTab",
+    "scripting",
+    "webNavigation"
+  ],
+  "host_permissions": ["*://youtube.com/*"],
   "background": {
     "scripts": ["background.js"],
+    "service_worker": "background.js",
     "type": "module"
   }
 }
