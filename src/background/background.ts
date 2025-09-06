@@ -5,13 +5,16 @@ if (typeof browser === "undefined") {
 }
 
 browser.runtime.onInstalled.addListener(() => {
-  console.log("hello from background script!");
+  browser.contextMenus.create({
+    id: "block-comment",
+    title: "Block Comment"
+  });
 });
 
 browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
-  if (changeInfo.status == "complete") {
-    if (tab.url?.indexOf("youtube.com") != -1) {
-      alert("Youtube load complete");
-    }
+  if (changeInfo.status !== "complete" || tab.url?.indexOf("youtube") === -1) {
+    return;
   }
+
+  console.log(tab, changeInfo, tab.url);
 });

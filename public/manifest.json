@@ -8,9 +8,10 @@
   },
   "permissions": [
     "unlimitedStorage",
-    "activeTab",
     "scripting",
-    "webNavigation"
+    "webNavigation",
+    "tabs",
+    "contextMenus"
   ],
   "host_permissions": ["*://youtube.com/*"],
   "background": {

@@ -28,7 +28,7 @@
   - Power Button/Toggle to turn extension on and offs
   - Report issue button that goes to GitHub issues
 - Right Click/Context Menu
-  - Right clicking on a comment will add an option to block the comment
+  - Right clicking on a comment will add an option to block the comment or a user
   - Listener in background script waits for that event then will call content script to remove that particular comment out
 - Settings Page
   - Shows users blocked
