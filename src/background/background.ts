@@ -1,3 +1,28 @@
+function onContextMenuItemClick(
+  info: browser.contextMenus.OnClickData,
+  tab?: browser.tabs.Tab
+) {
+  console.log(info, tab);
+}
+
+function createContextMenus() {
+  const documentUrlPatterns = ["*://*.youtube.com/*"];
+
+  browser.contextMenus.create({
+    id: "block-comment",
+    title: "Block Comment",
+    documentUrlPatterns: documentUrlPatterns
+  });
+
+  browser.contextMenus.create({
+    id: "block-user",
+    title: "Block User",
+    documentUrlPatterns: documentUrlPatterns
+  });
+
+  browser.contextMenus.onClicked.addListener(onContextMenuItemClick);
+}
+
 // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background#browser_support
 if (typeof browser === "undefined") {
   // @ts-expect-error Chrome does not support the browser namespace yet.
@@ -5,10 +30,7 @@ if (typeof browser === "undefined") {
 }
 
 browser.runtime.onInstalled.addListener(() => {
-  browser.contextMenus.create({
-    id: "block-comment",
-    title: "Block Comment"
-  });
+  createContextMenus();
 });
 
 browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
