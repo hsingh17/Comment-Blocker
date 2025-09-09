@@ -1,8 +1,22 @@
+// https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background#browser_support
+if (typeof browser === "undefined") {
+  // @ts-expect-error Chrome does not support the browser namespace yet.
+  globalThis.browser = chrome;
+}
+
+function blockComment() {}
+
+function blockUser() {}
+
 function onContextMenuItemClick(
-  info: browser.contextMenus.OnClickData,
-  tab?: browser.tabs.Tab
+  info: browser.contextMenus.OnClickData
+  // tab?: browser.tabs.Tab
 ) {
-  console.log(info, tab);
+  if (info.menuItemId === "block-comment") {
+    blockComment();
+  } else if (info.menuItemId === "block-user") {
+    blockUser();
+  }
 }
 
 function createContextMenus() {
@@ -21,12 +35,8 @@ function createContextMenus() {
   });
 
   browser.contextMenus.onClicked.addListener(onContextMenuItemClick);
-}
-
-// https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background#browser_support
-if (typeof browser === "undefined") {
-  // @ts-expect-error Chrome does not support the browser namespace yet.
-  globalThis.browser = chrome;
+  // TODO: disabled by default. if there is a comment dom element available, then show block comment or block user
+  // browser.contextMenus.update()
 }
 
 browser.runtime.onInstalled.addListener(() => {
