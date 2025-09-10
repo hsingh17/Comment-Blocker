@@ -1,6 +1,19 @@
+export interface Message {
+  messageType: string;
+}
+
+export interface ContextMenuMessage extends Message {
+  messageType: "context-menu";
+  commentNode: HTMLElement;
+}
+
 function onContextMenu(ev: MouseEvent) {
-  browser.runtime.sendMessage({});
-  console.log(ev.target);
+  // const msg: ContextMenuMessage;
+  const node = ev.target as HTMLElement;
+  if (node.tagName !== "span") {
+    return;
+  }
+  console.log(node.parentElement);
 }
 
 document.addEventListener("contextmenu", onContextMenu);

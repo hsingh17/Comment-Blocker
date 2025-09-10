@@ -4,14 +4,22 @@ if (typeof browser === "undefined") {
   globalThis.browser = chrome;
 }
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+// Types
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+// Functions
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 function blockComment() {}
 
 function blockUser() {}
 
-function onContextMenuItemClick(
-  info: browser.contextMenus.OnClickData
-  // tab?: browser.tabs.Tab
-) {
+function onContextMenuItemClick(info: browser.contextMenus.OnClickData) {
   if (info.menuItemId === "block-comment") {
     blockComment();
   } else if (info.menuItemId === "block-user") {
@@ -20,28 +28,40 @@ function onContextMenuItemClick(
 }
 
 function createContextMenus() {
-  const documentUrlPatterns = ["*://*.youtube.com/*"];
+  const shared = {
+    documentUrlPatterns: ["*://*.youtube.com/*"],
+    enabled: false
+  };
 
   browser.contextMenus.create({
     id: "block-comment",
     title: "Block Comment",
-    documentUrlPatterns: documentUrlPatterns
+    ...shared
   });
 
   browser.contextMenus.create({
     id: "block-user",
     title: "Block User",
-    documentUrlPatterns: documentUrlPatterns
+    ...shared
   });
 
   browser.contextMenus.onClicked.addListener(onContextMenuItemClick);
-  // TODO: disabled by default. if there is a comment dom element available, then show block comment or block user
-  // browser.contextMenus.update()
 }
 
-browser.runtime.onInstalled.addListener(() => {
-  createContextMenus();
-});
+function handleMessage(
+  message: unknown,
+  sender: browser.runtime.MessageSender,
+  sendResponse: (response?: unknown) => void
+) {
+  console.log(message, sender, sendResponse);
+}
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+// Listeners
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+browser.runtime.onInstalled.addListener(createContextMenus);
 
 browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
   if (changeInfo.status !== "complete" || tab.url?.indexOf("youtube") === -1) {
@@ -50,3 +70,5 @@ browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
 
   console.log(tab, changeInfo, tab.url);
 });
+
+browser.runtime.onMessage.addListener(handleMessage);
