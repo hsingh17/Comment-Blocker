@@ -1,16 +1,42 @@
-export interface Message {
-  messageType: string;
-  data: unknown;
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+// Globals
+///////////////////////////////////////////////////////////////////////////
+
+import type { ContextMenuMessage } from "../types";
+
+///////////////////////////////////////////////////////////////////////////
+const EMOJI_REGEX = /\p{Emoji}/u;
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+// Functions
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+function isEmoji(text: string) {
+  return EMOJI_REGEX.test(text);
 }
 
-export interface ContextMenuMessage extends Message {
-  readonly messageType: "context-menu";
-  data: {
-    commentElement: HTMLElement;
-    username: string;
-    profilePictureUrl: string;
-    video: string;
-  };
+function extractComment(commentElement: HTMLSpanElement): string {
+  let comment = "";
+  for (const node of commentElement.childNodes) {
+    const child = node as HTMLElement;
+    if (child.textContent) {
+      comment += child.textContent;
+      continue;
+    }
+
+    const img = child.querySelector("img");
+    if (img?.alt) {
+      if (isEmoji(img.alt)) {
+        comment += img.alt;
+      } else {
+        comment += ":" + img.alt + ": ";
+      }
+    }
+  }
+
+  return comment;
 }
 
 function extractUserInfoFromBody(body: Element) {
@@ -31,19 +57,43 @@ function extractUserInfoFromBody(body: Element) {
     usernameElement.href?.lastIndexOf("/") + 1
   );
   const profilePictureUrl = profilePictureElement.src;
+  const comment = extractComment(commentElement);
 
-  return { username, profilePictureUrl, commentElement };
+  return { username, profilePictureUrl, comment };
 }
 
-function onContextMenu(ev: MouseEvent) {
+function onMouseDown(ev: MouseEvent) {
+  // Not right click
+  if (ev.button !== 2) {
+    return;
+  }
+
+  const message: ContextMenuMessage = {
+    messageType: "context-menu"
+  };
   const e = ev.target as HTMLElement;
   const body = e.closest("#body");
 
   if (!body) {
+    browser.runtime.sendMessage(message);
     return;
   }
 
-  extractUserInfoFromBody(body);
+  const info = extractUserInfoFromBody(body);
+  const videoId = e.baseURI.substring(e.baseURI.lastIndexOf("?") + 1);
+  if (!info) {
+    browser.runtime.sendMessage(message);
+    return;
+  }
+
+  message.data = {
+    comment: info.comment,
+    username: info.username,
+    profilePictureUrl: info.profilePictureUrl,
+    videoId: videoId
+  };
+
+  browser.runtime.sendMessage(message);
 }
 
-document.addEventListener("contextmenu", onContextMenu);
+document.addEventListener("mousedown", onMouseDown);

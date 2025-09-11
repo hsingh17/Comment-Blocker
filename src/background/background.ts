@@ -1,3 +1,5 @@
+import type { ContextMenuMessage, Message } from "../types";
+
 // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background#browser_support
 if (typeof browser === "undefined") {
   // @ts-expect-error Chrome does not support the browser namespace yet.
@@ -6,9 +8,29 @@ if (typeof browser === "undefined") {
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-// Types
+// Globals
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+const SHARED_CTX_PROPS: browser.contextMenus._CreateCreateProperties = {
+  documentUrlPatterns: ["*://*.youtube.com/*"],
+  visible: false
+};
+
+const BLOCK_COMMENT_CTX_MENU_PROPS: browser.contextMenus._CreateCreateProperties =
+  {
+    id: "block-comment",
+    title: "Block Comment",
+    ...SHARED_CTX_PROPS
+  };
+
+const BLOCK_USER_CTX_MENU_PROPS: browser.contextMenus._CreateCreateProperties =
+  {
+    id: "block-user",
+    title: "Block User",
+    ...SHARED_CTX_PROPS
+  };
+
+let CONTEXT_MENU_MSG: ContextMenuMessage | null;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -20,6 +42,8 @@ function blockComment() {}
 function blockUser() {}
 
 function onContextMenuItemClick(info: browser.contextMenus.OnClickData) {
+  console.log(CONTEXT_MENU_MSG);
+
   if (info.menuItemId === "block-comment") {
     blockComment();
   } else if (info.menuItemId === "block-user") {
@@ -28,32 +52,27 @@ function onContextMenuItemClick(info: browser.contextMenus.OnClickData) {
 }
 
 function createContextMenus() {
-  const shared = {
-    documentUrlPatterns: ["*://*.youtube.com/*"],
-    enabled: false
-  };
-
-  browser.contextMenus.create({
-    id: "block-comment",
-    title: "Block Comment",
-    ...shared
-  });
-
-  browser.contextMenus.create({
-    id: "block-user",
-    title: "Block User",
-    ...shared
-  });
-
+  browser.contextMenus.create(BLOCK_COMMENT_CTX_MENU_PROPS);
+  browser.contextMenus.create(BLOCK_USER_CTX_MENU_PROPS);
   browser.contextMenus.onClicked.addListener(onContextMenuItemClick);
 }
 
-function handleMessage(
-  message: unknown,
-  sender: browser.runtime.MessageSender,
-  sendResponse: (response?: unknown) => void
-) {
-  console.log(message, sender, sendResponse);
+function handleContextMenuMessage(message: ContextMenuMessage) {
+  const updateProps: browser.contextMenus._UpdateUpdateProperties = {};
+  CONTEXT_MENU_MSG = message.data ? (message as ContextMenuMessage) : null;
+  updateProps.visible = CONTEXT_MENU_MSG !== null;
+  console.log(updateProps);
+
+  browser.contextMenus.update(BLOCK_COMMENT_CTX_MENU_PROPS.id!, updateProps);
+  browser.contextMenus.update(BLOCK_USER_CTX_MENU_PROPS.id!, updateProps);
+
+  console.log(CONTEXT_MENU_MSG);
+}
+
+function handleMessage(message: Message) {
+  if (message.messageType === "context-menu") {
+    handleContextMenuMessage(message as ContextMenuMessage);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////
