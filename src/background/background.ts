@@ -67,6 +67,7 @@ browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
   if (changeInfo.status !== "complete" || tab.url?.indexOf("youtube") === -1) {
     return;
   }
+  // TODO: Only do stuff if on an actual video or short
 
   console.log(tab, changeInfo, tab.url);
 });
