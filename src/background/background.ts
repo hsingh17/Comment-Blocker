@@ -11,6 +11,10 @@ if (typeof browser === "undefined") {
 // Globals
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+const DB_NAME = "Blocker";
+
+const DB_VERSION = 1;
+
 const SHARED_CTX_PROPS: browser.contextMenus._CreateCreateProperties = {
   documentUrlPatterns: ["*://*.youtube.com/*"],
   visible: false
@@ -42,8 +46,6 @@ function blockComment() {}
 function blockUser() {}
 
 function onContextMenuItemClick(info: browser.contextMenus.OnClickData) {
-  console.log(CONTEXT_MENU_MSG);
-
   if (info.menuItemId === "block-comment") {
     blockComment();
   } else if (info.menuItemId === "block-user") {
@@ -73,12 +75,32 @@ function handleMessage(message: Message) {
   }
 }
 
+function createSchema(this: IDBOpenDBRequest, ev: IDBVersionChangeEvent) {
+  const db = (ev.target as IDBOpenDBRequest).result;
+  const objStore = db.createObjectStore("comments", { keyPath: "" });
+  console.log(objStore);
+}
+
+function handleDbCreateError(this: IDBRequest<IDBDatabase>) {
+  console.error("Could not instantiate IndexedDB instance.");
+}
+
+function createDb() {
+  const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+  request.onerror = handleDbCreateError;
+  request.onupgradeneeded = createSchema;
+}
+
+function onInstalled() {
+  createContextMenus();
+  createDb();
+}
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 // Listeners
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-browser.runtime.onInstalled.addListener(createContextMenus);
+browser.runtime.onInstalled.addListener(onInstalled);
 
 browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
   if (changeInfo.status !== "complete" || tab.url?.indexOf("youtube") === -1) {
