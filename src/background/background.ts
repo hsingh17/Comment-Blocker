@@ -1,5 +1,5 @@
+import { YT_EMOJIS } from "../constants";
 import type { ContextMenuMessage, Message } from "../types";
-
 // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background#browser_support
 if (typeof browser === "undefined") {
   // @ts-expect-error Chrome does not support the browser namespace yet.
@@ -55,18 +55,16 @@ function createContextMenus() {
   browser.contextMenus.create(BLOCK_COMMENT_CTX_MENU_PROPS);
   browser.contextMenus.create(BLOCK_USER_CTX_MENU_PROPS);
   browser.contextMenus.onClicked.addListener(onContextMenuItemClick);
+  console.log(YT_EMOJIS);
 }
 
 function handleContextMenuMessage(message: ContextMenuMessage) {
   const updateProps: browser.contextMenus._UpdateUpdateProperties = {};
   CONTEXT_MENU_MSG = message.data ? (message as ContextMenuMessage) : null;
   updateProps.visible = CONTEXT_MENU_MSG !== null;
-  console.log(updateProps);
 
   browser.contextMenus.update(BLOCK_COMMENT_CTX_MENU_PROPS.id!, updateProps);
   browser.contextMenus.update(BLOCK_USER_CTX_MENU_PROPS.id!, updateProps);
-
-  console.log(CONTEXT_MENU_MSG);
 }
 
 function handleMessage(message: Message) {
