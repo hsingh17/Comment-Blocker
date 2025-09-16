@@ -15,5 +15,18 @@ export interface CommentInfo {
 
 export interface UserInfo {
   username: string;
-  profilePictureUrl: string;
+  profilePictureUrl?: string;
+}
+
+export interface UserRecord extends UserInfo, AuditableRecord {
+  blockedInd: "Y" | "N";
+}
+
+export interface CommentRecord extends CommentInfo, AuditableRecord {
+  commentId: number;
+  username: string;
+}
+
+export interface AuditableRecord {
+  createdOn?: Date;
 }
