@@ -9,6 +9,11 @@ export interface ContextMenuMessage extends Message {
   data?: CommentInfo & UserInfo;
 }
 
+export interface BlockCommentMessage extends Message {
+  readonly messageType: "block-comment";
+  data: null;
+}
+
 export interface CommentInfo {
   comment: string;
   videoId: string;

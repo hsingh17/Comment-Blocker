@@ -14,6 +14,8 @@ import type { ContextMenuMessage, Message } from "../types";
 ///////////////////////////////////////////////////////////////////////////
 const EMOJI_REGEX = /\p{Emoji}/u;
 
+let SELECTED_ELEMENT: HTMLElement | null;
+
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 // Functions
@@ -45,7 +47,11 @@ function extractComment(commentElement: HTMLSpanElement): string {
   return comment;
 }
 
-function extractUserInfoFromBody(body: Element) {
+function extractUserInfoFromBody(body: Element | null) {
+  if (!body) {
+    return;
+  }
+
   const usernameElement = body.querySelector(
     "#author-text"
   ) as HTMLAnchorElement;
@@ -65,7 +71,15 @@ function extractUserInfoFromBody(body: Element) {
   const profilePictureUrl = profilePictureElement.src;
   const comment = extractComment(commentElement);
 
-  return { username, profilePictureUrl, comment };
+  return { username, profilePictureUrl, comment, commentElement };
+}
+
+function sendMessageAndSetSelected(
+  message: Message,
+  selectedElement: HTMLElement | null
+) {
+  browser.runtime.sendMessage(message);
+  SELECTED_ELEMENT = selectedElement;
 }
 
 function onMouseDown(ev: MouseEvent) {
@@ -79,18 +93,12 @@ function onMouseDown(ev: MouseEvent) {
   };
   const e = ev.target as HTMLElement;
   const body = e.closest("#body");
-
-  if (!body) {
-    browser.runtime.sendMessage(message);
-    return;
-  }
-
   const info = extractUserInfoFromBody(body);
   const url = new URL(e.baseURI);
   const videoId = url.searchParams.get("v");
 
   if (!info) {
-    browser.runtime.sendMessage(message);
+    sendMessageAndSetSelected(message, null);
     return;
   }
 
@@ -101,11 +109,19 @@ function onMouseDown(ev: MouseEvent) {
     videoId: videoId!
   };
 
-  browser.runtime.sendMessage(message);
+  sendMessageAndSetSelected(message, info.commentElement);
+}
+
+function removeCurrentlySelectedComment() {
+  if (!SELECTED_ELEMENT) {
+    return;
+  }
 }
 
 function handleMessage(message: Message) {
-  console.log(message);
+  if (message.messageType === "context-menu") {
+    removeCurrentlySelectedComment();
+  }
 }
 
 document.addEventListener("mousedown", onMouseDown);
