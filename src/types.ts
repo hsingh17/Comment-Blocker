@@ -5,6 +5,7 @@ export interface Message {
 
 export interface ContextMenuMessage extends Message {
   readonly messageType: "context-menu";
+  tabId?: number;
   data?: CommentInfo & UserInfo;
 }
 

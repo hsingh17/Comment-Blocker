@@ -1,9 +1,15 @@
+// https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background#browser_support
+if (typeof browser === "undefined") {
+  // @ts-expect-error Chrome does not support the browser namespace yet.
+  globalThis.browser = chrome;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 // Globals
 ///////////////////////////////////////////////////////////////////////////
 
-import type { ContextMenuMessage } from "../types";
+import type { ContextMenuMessage, Message } from "../types";
 
 ///////////////////////////////////////////////////////////////////////////
 const EMOJI_REGEX = /\p{Emoji}/u;
@@ -98,4 +104,9 @@ function onMouseDown(ev: MouseEvent) {
   browser.runtime.sendMessage(message);
 }
 
+function handleMessage(message: Message) {
+  console.log(message);
+}
+
 document.addEventListener("mousedown", onMouseDown);
+browser.runtime.onMessage.addListener(handleMessage);

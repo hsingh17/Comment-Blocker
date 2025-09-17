@@ -5,6 +5,7 @@ import type {
   Message,
   UserRecord
 } from "../types";
+
 // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background#browser_support
 if (typeof browser === "undefined") {
   // @ts-expect-error Chrome does not support the browser namespace yet.
@@ -53,6 +54,11 @@ let DB: IDBDatabase;
 // Functions
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+function sendMessageToTab(tabId: number | undefined | null, message: Message) {
+  if (tabId) {
+    browser.tabs.sendMessage(tabId, message);
+  }
+}
 
 function blockUserOrComment(userBlockedInd: "Y" | "N") {
   const transaction = DB.transaction(["user", "comment"], "readwrite");
@@ -100,21 +106,31 @@ function blockUserOrComment(userBlockedInd: "Y" | "N") {
 function onContextMenuItemClick(info: browser.contextMenus.OnClickData) {
   if (CONTEXT_MENU_MSG && CONTEXT_MENU_MSG.data) {
     blockUserOrComment(info.menuItemId === "block-user" ? "Y" : "N");
+    sendMessageToTab(CONTEXT_MENU_MSG.tabId, { messageType: "yo" });
   }
 }
 
-function handleContextMenuMessage(message: ContextMenuMessage) {
+function handleContextMenuMessage(
+  message: ContextMenuMessage,
+  sender: browser.runtime.MessageSender
+) {
   const updateProps: browser.contextMenus._UpdateUpdateProperties = {};
   CONTEXT_MENU_MSG = message.data ? (message as ContextMenuMessage) : null;
   updateProps.visible = CONTEXT_MENU_MSG !== null;
+  if (CONTEXT_MENU_MSG) {
+    CONTEXT_MENU_MSG.tabId = sender.tab?.id;
+  }
 
   browser.contextMenus.update(BLOCK_COMMENT_CTX_MENU_PROPS.id!, updateProps);
   browser.contextMenus.update(BLOCK_USER_CTX_MENU_PROPS.id!, updateProps);
 }
 
-function handleMessage(message: Message) {
+function handleMessage(
+  message: Message,
+  sender: browser.runtime.MessageSender
+) {
   if (message.messageType === "context-menu") {
-    handleContextMenuMessage(message as ContextMenuMessage);
+    handleContextMenuMessage(message as ContextMenuMessage, sender);
   }
 }
 
