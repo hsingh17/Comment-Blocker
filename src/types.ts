@@ -23,10 +23,10 @@ export interface UserRecord extends UserInfo, AuditableRecord {
 }
 
 export interface CommentRecord extends CommentInfo, AuditableRecord {
-  commentId: number;
+  readonly commentId?: number;
   username: string;
 }
 
 export interface AuditableRecord {
-  createdOn?: Date;
+  createdOn: Date;
 }

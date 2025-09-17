@@ -80,7 +80,9 @@ function onMouseDown(ev: MouseEvent) {
   }
 
   const info = extractUserInfoFromBody(body);
-  const videoId = e.baseURI.substring(e.baseURI.lastIndexOf("?") + 1);
+  const url = new URL(e.baseURI);
+  const videoId = url.searchParams.get("v");
+
   if (!info) {
     browser.runtime.sendMessage(message);
     return;
@@ -90,7 +92,7 @@ function onMouseDown(ev: MouseEvent) {
     comment: info.comment,
     username: info.username,
     profilePictureUrl: info.profilePictureUrl,
-    videoId: videoId
+    videoId: videoId!
   };
 
   browser.runtime.sendMessage(message);

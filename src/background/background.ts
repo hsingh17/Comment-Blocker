@@ -1,5 +1,10 @@
 import { YT_EMOJIS } from "../constants";
-import type { ContextMenuMessage, Message, UserRecord } from "../types";
+import type {
+  CommentRecord,
+  ContextMenuMessage,
+  Message,
+  UserRecord
+} from "../types";
 // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background#browser_support
 if (typeof browser === "undefined") {
   // @ts-expect-error Chrome does not support the browser namespace yet.
@@ -48,48 +53,54 @@ let DB: IDBDatabase;
 // Functions
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-function saveUserToDb(user: UserRecord) {
-  console.log(user);
-}
 
-function blockComment() {
+function blockUserOrComment(userBlockedInd: "Y" | "N") {
   const transaction = DB.transaction(["user", "comment"], "readwrite");
   const userObjStore = transaction.objectStore("user");
-
-  // Check if user is already stored
+  const commentsObjStore = transaction.objectStore("comment");
   const username = CONTEXT_MENU_MSG?.data?.username;
-  if (!username) {
+  const videoId = CONTEXT_MENU_MSG?.data?.videoId;
+  const comment = CONTEXT_MENU_MSG?.data?.comment;
+
+  if (!username || !videoId || !comment) {
     return;
   }
 
-  userObjStore.get(username).onerror = () => {
-    saveUserToDb({
+  // Check if user is already stored. If no user, save to users object store
+  userObjStore.get(username).onsuccess = (ev: Event) => {
+    const result: UserRecord | null = (ev.target as IDBRequest)?.result;
+    const updating = result?.blockedInd === "N" && userBlockedInd === "Y";
+
+    // NOOP: user exists and we're not trying to block the user
+    if (result && !updating) {
+      return;
+    }
+
+    const userRecord: UserRecord = {
       username: username,
-      blockedInd: "N",
-      profilePictureUrl: CONTEXT_MENU_MSG?.data?.profilePictureUrl
-    });
+      blockedInd: userBlockedInd,
+      profilePictureUrl: CONTEXT_MENU_MSG?.data?.profilePictureUrl,
+      createdOn: new Date()
+    };
+
+    userObjStore.put(userRecord);
   };
 
-  // const commentsObjStore = transaction.objectStore("comment");
-}
+  // Now save comment
+  const commentRecord: CommentRecord = {
+    comment: comment,
+    videoId: videoId,
+    username: username,
+    createdOn: new Date()
+  };
 
-function blockUser() {}
+  commentsObjStore.put(commentRecord);
+}
 
 function onContextMenuItemClick(info: browser.contextMenus.OnClickData) {
-  if (!CONTEXT_MENU_MSG || !CONTEXT_MENU_MSG.data) {
-    return;
-  } else if (info.menuItemId === "block-comment") {
-    blockComment();
-  } else if (info.menuItemId === "block-user") {
-    blockUser();
+  if (CONTEXT_MENU_MSG && CONTEXT_MENU_MSG.data) {
+    blockUserOrComment(info.menuItemId === "block-user" ? "Y" : "N");
   }
-}
-
-function createContextMenus() {
-  browser.contextMenus.create(BLOCK_COMMENT_CTX_MENU_PROPS);
-  browser.contextMenus.create(BLOCK_USER_CTX_MENU_PROPS);
-  browser.contextMenus.onClicked.addListener(onContextMenuItemClick);
-  console.log(YT_EMOJIS);
 }
 
 function handleContextMenuMessage(message: ContextMenuMessage) {
@@ -105,6 +116,13 @@ function handleMessage(message: Message) {
   if (message.messageType === "context-menu") {
     handleContextMenuMessage(message as ContextMenuMessage);
   }
+}
+
+function createContextMenus() {
+  browser.contextMenus.create(BLOCK_COMMENT_CTX_MENU_PROPS);
+  browser.contextMenus.create(BLOCK_USER_CTX_MENU_PROPS);
+  browser.contextMenus.onClicked.addListener(onContextMenuItemClick);
+  console.log(YT_EMOJIS);
 }
 
 function createSchema(this: IDBOpenDBRequest, ev: IDBVersionChangeEvent) {
