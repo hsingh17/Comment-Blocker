@@ -14,7 +14,7 @@ import type { ContextMenuMessage, Message } from "../types";
 ///////////////////////////////////////////////////////////////////////////
 const EMOJI_REGEX = /\p{Emoji}/u;
 
-let SELECTED_ELEMENT: HTMLElement | null;
+let SELECTED_ELEMENT: Element | null;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -71,12 +71,12 @@ function extractUserInfoFromBody(body: Element | null) {
   const profilePictureUrl = profilePictureElement.src;
   const comment = extractComment(commentElement);
 
-  return { username, profilePictureUrl, comment, commentElement };
+  return { username, profilePictureUrl, comment };
 }
 
 function sendMessageAndSetSelected(
   message: Message,
-  selectedElement: HTMLElement | null
+  selectedElement: Element | null
 ) {
   browser.runtime.sendMessage(message);
   SELECTED_ELEMENT = selectedElement;
@@ -109,17 +109,28 @@ function onMouseDown(ev: MouseEvent) {
     videoId: videoId!
   };
 
-  sendMessageAndSetSelected(message, info.commentElement);
+  sendMessageAndSetSelected(message, body);
 }
 
 function removeCurrentlySelectedComment() {
   if (!SELECTED_ELEMENT) {
     return;
   }
+
+  const threadElement = SELECTED_ELEMENT.closest("ytd-comment-thread-renderer");
+  const replies = SELECTED_ELEMENT.closest("#replies");
+
+  // If the current element is contained with a div with id "replies",
+  // this is a reply comment so just remove the reply only. Otherwise remove the entire thread.
+  if (replies) {
+    SELECTED_ELEMENT.remove();
+  } else {
+    threadElement?.remove();
+  }
 }
 
 function handleMessage(message: Message) {
-  if (message.messageType === "context-menu") {
+  if (message.messageType === "block-comment") {
     removeCurrentlySelectedComment();
   }
 }

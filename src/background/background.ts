@@ -106,7 +106,9 @@ function blockUserOrComment(userBlockedInd: "Y" | "N") {
 function onContextMenuItemClick(info: browser.contextMenus.OnClickData) {
   if (CONTEXT_MENU_MSG && CONTEXT_MENU_MSG.data) {
     blockUserOrComment(info.menuItemId === "block-user" ? "Y" : "N");
-    sendMessageToTab(CONTEXT_MENU_MSG.tabId, { messageType: "yo" });
+    sendMessageToTab(CONTEXT_MENU_MSG.tabId, {
+      messageType: "block-comment"
+    });
   }
 }
 
