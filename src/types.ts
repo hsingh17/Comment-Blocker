@@ -11,7 +11,11 @@ export interface ContextMenuMessage extends Message {
 
 export interface BlockCommentMessage extends Message {
   readonly messageType: "block-comment";
-  data: null;
+}
+
+export interface BlockUserMessage extends Message {
+  readonly messageType: "block-user";
+  data: UserInfo;
 }
 
 export interface CommentInfo {

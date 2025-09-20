@@ -9,12 +9,12 @@ if (typeof browser === "undefined") {
 // Globals
 ///////////////////////////////////////////////////////////////////////////
 
-import type { ContextMenuMessage, Message } from "../types";
+import type { BlockUserMessage, ContextMenuMessage, Message } from "../types";
 
 ///////////////////////////////////////////////////////////////////////////
 const EMOJI_REGEX = /\p{Emoji}/u;
 
-let SELECTED_ELEMENT: Element | null;
+let SELECTED_ELEMENT: HTMLDivElement | null;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ function extractComment(commentElement: HTMLSpanElement): string {
   return comment;
 }
 
-function extractUserInfoFromBody(body: Element | null) {
+function extractUserInfoFromBodyElement(body: Element | null) {
   if (!body) {
     return;
   }
@@ -76,10 +76,10 @@ function extractUserInfoFromBody(body: Element | null) {
 
 function sendMessageAndSetSelected(
   message: Message,
-  selectedElement: Element | null
+  bodyElement: HTMLDivElement | null
 ) {
   browser.runtime.sendMessage(message);
-  SELECTED_ELEMENT = selectedElement;
+  SELECTED_ELEMENT = bodyElement;
 }
 
 function onMouseDown(ev: MouseEvent) {
@@ -92,8 +92,8 @@ function onMouseDown(ev: MouseEvent) {
     messageType: "context-menu"
   };
   const e = ev.target as HTMLElement;
-  const body = e.closest("#body");
-  const info = extractUserInfoFromBody(body);
+  const body = e.closest("#body") as HTMLDivElement;
+  const info = extractUserInfoFromBodyElement(body);
   const url = new URL(e.baseURI);
   const videoId = url.searchParams.get("v");
 
@@ -112,26 +112,43 @@ function onMouseDown(ev: MouseEvent) {
   sendMessageAndSetSelected(message, body);
 }
 
-function removeCurrentlySelectedComment() {
-  if (!SELECTED_ELEMENT) {
+function removeBodyElement(bodyElement: HTMLDivElement | null) {
+  if (!bodyElement) {
     return;
   }
 
-  const threadElement = SELECTED_ELEMENT.closest("ytd-comment-thread-renderer");
-  const replies = SELECTED_ELEMENT.closest("#replies");
+  const threadElement = bodyElement.closest("ytd-comment-thread-renderer");
+  const replies = bodyElement.closest("#replies");
 
   // If the current element is contained with a div with id "replies",
   // this is a reply comment so just remove the reply only. Otherwise remove the entire thread.
   if (replies) {
-    SELECTED_ELEMENT.remove();
+    bodyElement.remove();
   } else {
     threadElement?.remove();
   }
 }
 
+function removeAllCommentsFromUsers(usernames: string[]) {
+  console.log(usernames);
+
+  const comments = document.querySelector("#comments");
+  const contents = comments?.querySelector("#contents");
+  if (!contents) {
+    return;
+  }
+
+  for (const content of contents.children) {
+    console.log(content);
+  }
+}
+
 function handleMessage(message: Message) {
   if (message.messageType === "block-comment") {
-    removeCurrentlySelectedComment();
+    removeBodyElement(SELECTED_ELEMENT);
+  } else if (message.messageType === "block-user") {
+    const username = (message as BlockUserMessage).data.username;
+    removeAllCommentsFromUsers([username]);
   }
 }
 

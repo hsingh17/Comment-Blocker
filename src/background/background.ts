@@ -105,9 +105,12 @@ function blockUserOrComment(userBlockedInd: "Y" | "N") {
 
 function onContextMenuItemClick(info: browser.contextMenus.OnClickData) {
   if (CONTEXT_MENU_MSG && CONTEXT_MENU_MSG.data) {
-    blockUserOrComment(info.menuItemId === "block-user" ? "Y" : "N");
+    const blockingUser = info.menuItemId === "block-user";
+
+    blockUserOrComment(blockingUser ? "Y" : "N");
     sendMessageToTab(CONTEXT_MENU_MSG.tabId, {
-      messageType: "block-comment"
+      messageType: blockingUser ? "block-user" : "block-comment",
+      data: blockingUser ? { username: CONTEXT_MENU_MSG.data.username } : null
     });
   }
 }
