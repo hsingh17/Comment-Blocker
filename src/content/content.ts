@@ -95,9 +95,16 @@ function onMouseDown(ev: MouseEvent) {
   const body = e.closest("#body") as HTMLDivElement;
   const info = extractUserInfoFromBodyElement(body);
   const url = new URL(e.baseURI);
-  const videoId = url.searchParams.get("v");
+  const videoPath = url.pathname;
+  let videoId;
 
-  if (!info) {
+  if (videoPath.indexOf("shorts")) {
+    videoId = videoPath.substring(videoPath.lastIndexOf("/") + 1);
+  } else if (url.searchParams.has("v")) {
+    videoId = url.searchParams.get("v");
+  }
+
+  if (!info || !videoId) {
     sendMessageAndSetSelected(message, null);
     return;
   }
@@ -129,17 +136,22 @@ function removeBodyElement(bodyElement: HTMLDivElement | null) {
   }
 }
 
-function removeAllCommentsFromUsers(usernames: string[]) {
-  console.log(usernames);
-
+function removeAllCommentsFromUsers(usernames: Set<string>) {
   const comments = document.querySelector("#comments");
   const contents = comments?.querySelector("#contents");
   if (!contents) {
     return;
   }
+  console.log(usernames);
 
   for (const content of contents.children) {
-    console.log(content);
+    const body = content.querySelector("#body") as HTMLDivElement;
+    const info = extractUserInfoFromBodyElement(body);
+    console.log(info?.username);
+
+    if (info?.username && usernames.has(info?.username)) {
+      removeBodyElement(body);
+    }
   }
 }
 
@@ -148,7 +160,7 @@ function handleMessage(message: Message) {
     removeBodyElement(SELECTED_ELEMENT);
   } else if (message.messageType === "block-user") {
     const username = (message as BlockUserMessage).data.username;
-    removeAllCommentsFromUsers([username]);
+    removeAllCommentsFromUsers(new Set([username]));
   }
 }
 
