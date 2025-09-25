@@ -185,12 +185,16 @@ function onInstalled() {
 browser.runtime.onInstalled.addListener(onInstalled);
 
 browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
-  if (changeInfo.status !== "complete" || tab.url?.indexOf("youtube") === -1) {
-    return;
+  if (
+    changeInfo.status === "complete" &&
+    tab.url?.includes("youtube") &&
+    tab.url?.includes("shorts") &&
+    tab.url.includes("v=")
+  ) {
+    sendMessageToTab(tab.id, {
+      messageType: "navigate-new-video"
+    });
   }
-  // TODO: Only do stuff if on an actual video or short
-
-  console.log(tab, changeInfo, tab.url);
 });
 
 browser.runtime.onMessage.addListener(handleMessage);

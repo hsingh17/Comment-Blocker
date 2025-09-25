@@ -18,6 +18,11 @@ export interface BlockUserMessage extends Message {
   data: UserInfo;
 }
 
+export interface NavigateToNewVideoMessage extends Message {
+  readonly messageType: "navigate-new-video";
+  data?: null;
+}
+
 export interface CommentInfo {
   comment: string;
   videoId: string;

@@ -15,6 +15,7 @@ import type { BlockUserMessage, ContextMenuMessage, Message } from "../types";
 const EMOJI_REGEX = /\p{Emoji}/u;
 
 let SELECTED_ELEMENT: HTMLDivElement | null;
+let COMMENT_ELEMENTS: Element[] | null;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -137,14 +138,11 @@ function removeBodyElement(bodyElement: HTMLDivElement | null) {
 }
 
 function removeAllCommentsFromUsers(usernames: Set<string>) {
-  const comments = document.querySelector("#comments");
-  const contents = comments?.querySelector("#contents");
-  if (!contents) {
+  if (!COMMENT_ELEMENTS) {
     return;
   }
-  console.log(usernames);
 
-  for (const content of contents.children) {
+  for (const content of COMMENT_ELEMENTS) {
     const body = content.querySelector("#body") as HTMLDivElement;
     const info = extractUserInfoFromBodyElement(body);
     console.log(info?.username);
@@ -155,12 +153,28 @@ function removeAllCommentsFromUsers(usernames: Set<string>) {
   }
 }
 
+function handleNavigateToNewVideo() {
+  const comments = document.querySelector("#comments");
+  const contents = comments?.querySelector("#contents");
+  COMMENT_ELEMENTS = [];
+  // Find ytd-comment-thread-renderer span element
+  // 1. Get element with id=body-> main comment
+  if (!contents) {
+    return;
+  }
+
+  // Also need to hook some listener to main comments block to block comments as they lazy load in
+  // Need another listener for when replies are clicked
+}
+
 function handleMessage(message: Message) {
   if (message.messageType === "block-comment") {
     removeBodyElement(SELECTED_ELEMENT);
   } else if (message.messageType === "block-user") {
     const username = (message as BlockUserMessage).data.username;
     removeAllCommentsFromUsers(new Set([username]));
+  } else if (message.messageType === "navigate-new-video") {
+    handleNavigateToNewVideo();
   }
 }
 
