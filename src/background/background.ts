@@ -187,9 +187,9 @@ browser.runtime.onInstalled.addListener(onInstalled);
 browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
   if (
     changeInfo.status === "complete" &&
-    tab.url?.includes("youtube") &&
-    tab.url?.includes("shorts") &&
-    tab.url.includes("v=")
+    tab.url &&
+    tab.url.includes("youtube") &&
+    (tab.url.includes("shorts") || tab.url.includes("v="))
   ) {
     sendMessageToTab(tab.id, {
       messageType: "navigate-new-video"

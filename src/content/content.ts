@@ -161,15 +161,40 @@ function assignPageBodyElements() {
   }
 
   COMMENT_ELEMENTS = Array.of(...contents.querySelectorAll("#body"));
+  console.log(COMMENT_ELEMENTS);
 }
 
-function attachListenerToReplyButtons() {}
-function attachListenerToCommentContainer() {}
+function attachListenerToReplyButtons() {
+  const replies = document.querySelectorAll(
+    "#replies"
+  ) as NodeListOf<HTMLDivElement>;
+
+  console.log(replies);
+
+  for (const reply of replies) {
+    reply.addEventListener("click", (e) => {
+      console.log("clicked", e);
+    });
+  }
+}
+function attachObserverToYtApp() {
+  const target = document.querySelector("ytd-app");
+  if (!target) {
+    return;
+  }
+
+  const observer = new MutationObserver(() => {
+    //TODO
+  });
+  observer.observe(target, {
+    subtree: true
+  });
+}
 
 function handleNavigateToNewVideo() {
   assignPageBodyElements();
   attachListenerToReplyButtons();
-  attachListenerToCommentContainer();
+  attachObserverToYtApp();
 }
 
 function handleMessage(message: Message) {
