@@ -153,18 +153,23 @@ function removeAllCommentsFromUsers(usernames: Set<string>) {
   }
 }
 
-function handleNavigateToNewVideo() {
+function assignPageBodyElements() {
   const comments = document.querySelector("#comments");
   const contents = comments?.querySelector("#contents");
-  COMMENT_ELEMENTS = [];
-  // Find ytd-comment-thread-renderer span element
-  // 1. Get element with id=body-> main comment
   if (!contents) {
     return;
   }
 
-  // Also need to hook some listener to main comments block to block comments as they lazy load in
-  // Need another listener for when replies are clicked
+  COMMENT_ELEMENTS = Array.of(...contents.querySelectorAll("#body"));
+}
+
+function attachListenerToReplyButtons() {}
+function attachListenerToCommentContainer() {}
+
+function handleNavigateToNewVideo() {
+  assignPageBodyElements();
+  attachListenerToReplyButtons();
+  attachListenerToCommentContainer();
 }
 
 function handleMessage(message: Message) {
