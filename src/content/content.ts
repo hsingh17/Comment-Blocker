@@ -161,40 +161,41 @@ function assignPageBodyElements() {
   }
 
   COMMENT_ELEMENTS = Array.of(...contents.querySelectorAll("#body"));
-  console.log(COMMENT_ELEMENTS);
 }
 
-function attachListenerToReplyButtons() {
-  const replies = document.querySelectorAll(
-    "#replies"
-  ) as NodeListOf<HTMLDivElement>;
-
-  console.log(replies);
-
-  for (const reply of replies) {
-    reply.addEventListener("click", (e) => {
-      console.log("clicked", e);
-    });
+function mutationObserverCallback(
+  mutations: MutationRecord[],
+  observer: MutationObserver
+) {
+  for (const mutation of mutations) {
+    console.log(mutation);
   }
+
+  console.log(observer);
 }
-function attachObserverToYtApp() {
-  const target = document.querySelector("ytd-app");
+
+function attachObserverToPage() {
+  const target = document.querySelector("#page-manager");
+
+  console.log(target);
   if (!target) {
     return;
   }
 
-  const observer = new MutationObserver(() => {
-    //TODO
-  });
+  console.log("hi");
+
+  const observer = new MutationObserver(mutationObserverCallback);
   observer.observe(target, {
-    subtree: true
+    subtree: true,
+    childList: true
   });
+
+  console.log(observer);
 }
 
 function handleNavigateToNewVideo() {
   assignPageBodyElements();
-  attachListenerToReplyButtons();
-  attachObserverToYtApp();
+  attachObserverToPage();
 }
 
 function handleMessage(message: Message) {
