@@ -145,7 +145,6 @@ function removeAllCommentsFromUsers(usernames: Set<string>) {
   for (const content of COMMENT_ELEMENTS) {
     const body = content.querySelector("#body") as HTMLDivElement;
     const info = extractUserInfoFromBodyElement(body);
-    console.log(info?.username);
 
     if (info?.username && usernames.has(info?.username)) {
       removeBodyElement(body);
@@ -168,29 +167,29 @@ function mutationObserverCallback(
   observer: MutationObserver
 ) {
   for (const mutation of mutations) {
-    console.log(mutation);
-  }
+    const target = mutation.target as Element;
 
-  console.log(observer);
+    if (
+      target.tagName.toLowerCase() === "ytd-comment-thread-renderer" &&
+      mutation.addedNodes.length !== 0
+    ) {
+      console.log(observer, mutation);
+    }
+  }
 }
 
 function attachObserverToPage() {
   const target = document.querySelector("#page-manager");
 
-  console.log(target);
   if (!target) {
     return;
   }
-
-  console.log("hi");
 
   const observer = new MutationObserver(mutationObserverCallback);
   observer.observe(target, {
     subtree: true,
     childList: true
   });
-
-  console.log(observer);
 }
 
 function handleNavigateToNewVideo() {
