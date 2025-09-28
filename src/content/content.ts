@@ -14,8 +14,9 @@ import type { BlockUserMessage, ContextMenuMessage, Message } from "../types";
 ///////////////////////////////////////////////////////////////////////////
 const EMOJI_REGEX = /\p{Emoji}/u;
 
-let SELECTED_ELEMENT: HTMLDivElement | null;
-let COMMENT_ELEMENTS: Element[] | null;
+let SELECTED_COMMENT: HTMLDivElement | null;
+let COMMENT_ELEMENTS_ON_PAGE: HTMLDivElement[] | null;
+let MUTATION_OBSERVER: MutationObserver | null;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -80,7 +81,7 @@ function sendMessageAndSetSelected(
   bodyElement: HTMLDivElement | null
 ) {
   browser.runtime.sendMessage(message);
-  SELECTED_ELEMENT = bodyElement;
+  SELECTED_COMMENT = bodyElement;
 }
 
 function onMouseDown(ev: MouseEvent) {
@@ -138,11 +139,11 @@ function removeBodyElement(bodyElement: HTMLDivElement | null) {
 }
 
 function removeAllCommentsFromUsers(usernames: Set<string>) {
-  if (!COMMENT_ELEMENTS) {
+  if (!COMMENT_ELEMENTS_ON_PAGE) {
     return;
   }
 
-  for (const content of COMMENT_ELEMENTS) {
+  for (const content of COMMENT_ELEMENTS_ON_PAGE) {
     const body = content.querySelector("#body") as HTMLDivElement;
     const info = extractUserInfoFromBodyElement(body);
 
@@ -152,59 +153,65 @@ function removeAllCommentsFromUsers(usernames: Set<string>) {
   }
 }
 
-function assignPageBodyElements() {
-  const comments = document.querySelector("#comments");
-  const contents = comments?.querySelector("#contents");
-  if (!contents) {
-    return;
-  }
-
-  COMMENT_ELEMENTS = Array.of(...contents.querySelectorAll("#body"));
+function handleClickReplies(e: PointerEvent) {
+  console.log(e);
 }
 
-function mutationObserverCallback(
-  mutations: MutationRecord[],
-  observer: MutationObserver
-) {
+function mutationObserverCallback(mutations: MutationRecord[]) {
   for (const mutation of mutations) {
     const target = mutation.target as Element;
-
     if (
-      target.tagName.toLowerCase() === "ytd-comment-thread-renderer" &&
-      mutation.addedNodes.length !== 0
+      target.tagName.toLowerCase() !== "ytd-comment-thread-renderer" &&
+      mutation.addedNodes.length === 0
     ) {
-      console.log(observer, mutation);
+      continue;
     }
+
+    const body = target.querySelector("#body") as HTMLDivElement;
+    const replies = target.querySelector("#replies") as HTMLDivElement;
+
+    if (body) {
+      COMMENT_ELEMENTS_ON_PAGE?.push(body);
+    }
+
+    replies?.addEventListener("click", (e: PointerEvent) =>
+      handleClickReplies(e)
+    );
   }
+
+  console.log(COMMENT_ELEMENTS_ON_PAGE);
 }
 
 function attachObserverToPage() {
+  // New page so re-initialize array as an empty array
+  COMMENT_ELEMENTS_ON_PAGE = [];
+
+  // Make sure to disconnect old observer if there was one attached
+  if (MUTATION_OBSERVER) {
+    MUTATION_OBSERVER.disconnect();
+  }
+
   const target = document.querySelector("#page-manager");
 
   if (!target) {
     return;
   }
 
-  const observer = new MutationObserver(mutationObserverCallback);
-  observer.observe(target, {
+  MUTATION_OBSERVER = new MutationObserver(mutationObserverCallback);
+  MUTATION_OBSERVER.observe(target, {
     subtree: true,
     childList: true
   });
 }
 
-function handleNavigateToNewVideo() {
-  assignPageBodyElements();
-  attachObserverToPage();
-}
-
 function handleMessage(message: Message) {
   if (message.messageType === "block-comment") {
-    removeBodyElement(SELECTED_ELEMENT);
+    removeBodyElement(SELECTED_COMMENT);
   } else if (message.messageType === "block-user") {
     const username = (message as BlockUserMessage).data.username;
     removeAllCommentsFromUsers(new Set([username]));
   } else if (message.messageType === "navigate-new-video") {
-    handleNavigateToNewVideo();
+    attachObserverToPage();
   }
 }
 
