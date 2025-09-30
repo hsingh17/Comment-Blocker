@@ -35,3 +35,15 @@
     - For each user show: PFP, account name, count of how many times you've seen them (length of videos), and watch videos they've appeared on
   - Can remove users
 - Probably need to look into YouTube API
+
+- Navigate to new page:
+  - add mutation observer that has a callback for when new comments are added to the page
+    - callback will remove comments from blocked users
+- click replies button
+  - block any replies from blocked users
+- block comment context menu action
+  - remove single comment thread or reply
+- block user
+  - if blocking user from thread -> delete thread
+  - if blocking from reply -> block any replies in that thread
+  - after the above, run thru the comments (and their replies if visible) that are on page and remove any from the user

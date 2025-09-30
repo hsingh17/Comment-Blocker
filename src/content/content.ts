@@ -15,7 +15,6 @@ import type { BlockUserMessage, ContextMenuMessage, Message } from "../types";
 const EMOJI_REGEX = /\p{Emoji}/u;
 
 let SELECTED_COMMENT: HTMLDivElement | null;
-let COMMENT_ELEMENTS_ON_PAGE: HTMLDivElement[] | null;
 let MUTATION_OBSERVER: MutationObserver | null;
 
 ///////////////////////////////////////////////////////////////////////////
@@ -139,6 +138,7 @@ function removeBodyElement(bodyElement: HTMLDivElement | null) {
 }
 
 function removeAllCommentsFromUsers(usernames: Set<string>) {
+  const COMMENT_ELEMENTS_ON_PAGE: Element[] = [];
   if (!COMMENT_ELEMENTS_ON_PAGE) {
     return;
   }
@@ -153,46 +153,40 @@ function removeAllCommentsFromUsers(usernames: Set<string>) {
   }
 }
 
-function handleClickReplies(e: PointerEvent) {
-  console.log(e);
+function commentAdded(target: Element, mutation: MutationRecord) {
+  return (
+    target.tagName.toLocaleLowerCase() === "ytd-comment-thread-renderer" &&
+    mutation.addedNodes.length > 0
+  );
+}
+
+function repliesShown(target: Element) {
+  return (
+    target.id === "expander-contents" &&
+    target.className.includes("ytd-comment-replies-renderer") &&
+    target.checkVisibility()
+  );
 }
 
 function mutationObserverCallback(mutations: MutationRecord[]) {
   for (const mutation of mutations) {
     const target = mutation.target as Element;
-    if (
-      target.tagName.toLowerCase() !== "ytd-comment-thread-renderer" &&
-      mutation.addedNodes.length === 0
-    ) {
-      continue;
+
+    if (commentAdded(target, mutation)) {
+      console.log(target, "comment");
+    } else if (repliesShown(target)) {
+      console.log(target, "replies");
     }
-
-    const body = target.querySelector("#body") as HTMLDivElement;
-    const replies = target.querySelector("#replies") as HTMLDivElement;
-
-    if (body) {
-      COMMENT_ELEMENTS_ON_PAGE?.push(body);
-    }
-
-    replies?.addEventListener("click", (e: PointerEvent) =>
-      handleClickReplies(e)
-    );
   }
-
-  console.log(COMMENT_ELEMENTS_ON_PAGE);
 }
 
 function attachObserverToPage() {
-  // New page so re-initialize array as an empty array
-  COMMENT_ELEMENTS_ON_PAGE = [];
-
   // Make sure to disconnect old observer if there was one attached
   if (MUTATION_OBSERVER) {
     MUTATION_OBSERVER.disconnect();
   }
 
   const target = document.querySelector("#page-manager");
-
   if (!target) {
     return;
   }
@@ -200,7 +194,8 @@ function attachObserverToPage() {
   MUTATION_OBSERVER = new MutationObserver(mutationObserverCallback);
   MUTATION_OBSERVER.observe(target, {
     subtree: true,
-    childList: true
+    childList: true,
+    attributes: true
   });
 }
 
