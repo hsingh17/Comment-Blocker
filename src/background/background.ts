@@ -60,6 +60,16 @@ function sendMessageToTab(tabId: number | undefined | null, message: Message) {
   }
 }
 
+// function getBlockedUsers() {
+//   const transaction = DB.transaction(["user"], "readonly");
+//   const userObjStore = transaction.objectStore("user");
+//   const index = userObjStore.index("blockedInd");
+//   const indexQuery = index.get("Y");
+//   indexQuery.onsuccess = () => {
+//     console.log(indexQuery.result);
+//   };
+// }
+
 function blockUserOrComment(userBlockedInd: "Y" | "N") {
   const transaction = DB.transaction(["user", "comment"], "readwrite");
   const userObjStore = transaction.objectStore("user");
@@ -148,7 +158,11 @@ function createContextMenus() {
 
 function createSchema(this: IDBOpenDBRequest, ev: IDBVersionChangeEvent) {
   const db = (ev.target as IDBOpenDBRequest).result;
-  db.createObjectStore(DB_TABLE_NAMES.user, { keyPath: "username" });
+  const userObjStore = db.createObjectStore(DB_TABLE_NAMES.user, {
+    keyPath: "username"
+  });
+
+  userObjStore.createIndex("blockedInd", "blockedInd", { unique: false });
 
   const commentsObjStore = db.createObjectStore(DB_TABLE_NAMES.comment, {
     keyPath: "commentId",
