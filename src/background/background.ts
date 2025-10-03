@@ -49,6 +49,8 @@ let CONTEXT_MENU_MSG: ContextMenuMessage | null;
 
 let DB: IDBDatabase;
 
+let BLOCKED_USERS: Set<UserRecord> | null;
+
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 // Functions
@@ -60,15 +62,13 @@ function sendMessageToTab(tabId: number | undefined | null, message: Message) {
   }
 }
 
-// function getBlockedUsers() {
-//   const transaction = DB.transaction(["user"], "readonly");
-//   const userObjStore = transaction.objectStore("user");
-//   const index = userObjStore.index("blockedInd");
-//   const indexQuery = index.get("Y");
-//   indexQuery.onsuccess = () => {
-//     console.log(indexQuery.result);
-//   };
-// }
+function setBlockedUsers() {
+  const transaction = DB.transaction(["user"], "readonly");
+  const userObjStore = transaction.objectStore("user");
+  const index = userObjStore.index("blockedInd");
+  const indexQuery = index.getAll("Y");
+  indexQuery.onsuccess = () => (BLOCKED_USERS = new Set(indexQuery.result));
+}
 
 function blockUserOrComment(userBlockedInd: "Y" | "N") {
   const transaction = DB.transaction(["user", "comment"], "readwrite");
@@ -146,6 +146,8 @@ function handleMessage(
 ) {
   if (message.messageType === "context-menu") {
     handleContextMenuMessage(message as ContextMenuMessage, sender);
+  } else if (message.messageType === "get-blocked-users") {
+    console.log(BLOCKED_USERS);
   }
 }
 
@@ -205,6 +207,7 @@ browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
     tab.url.includes("youtube") &&
     (tab.url.includes("shorts") || tab.url.includes("v="))
   ) {
+    setBlockedUsers();
     sendMessageToTab(tab.id, {
       messageType: "navigate-new-video"
     });
