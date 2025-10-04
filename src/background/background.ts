@@ -3,6 +3,7 @@ import type {
   CommentRecord,
   ContextMenuMessage,
   Message,
+  NavigateToNewVideoMessage,
   UserRecord
 } from "../types";
 
@@ -62,12 +63,15 @@ function sendMessageToTab(tabId: number | undefined | null, message: Message) {
   }
 }
 
-function setBlockedUsers() {
+function setBlockedUsers(successCallback: () => void) {
   const transaction = DB.transaction(["user"], "readonly");
   const userObjStore = transaction.objectStore("user");
   const index = userObjStore.index("blockedInd");
   const indexQuery = index.getAll("Y");
-  indexQuery.onsuccess = () => (BLOCKED_USERS = new Set(indexQuery.result));
+  indexQuery.onsuccess = () => {
+    BLOCKED_USERS = new Set(indexQuery.result);
+    successCallback();
+  };
 }
 
 function blockUserOrComment(userBlockedInd: "Y" | "N") {
@@ -146,8 +150,6 @@ function handleMessage(
 ) {
   if (message.messageType === "context-menu") {
     handleContextMenuMessage(message as ContextMenuMessage, sender);
-  } else if (message.messageType === "get-blocked-users") {
-    console.log(BLOCKED_USERS);
   }
 }
 
@@ -193,6 +195,31 @@ function onInstalled() {
   createContextMenus();
   initDb();
 }
+
+function onUpdated(
+  _tabId: number,
+  changeInfo: browser.tabs._OnUpdatedChangeInfo,
+  tab: browser.tabs.Tab
+) {
+  if (
+    changeInfo.status === "complete" &&
+    tab.url &&
+    tab.url.includes("youtube") &&
+    (tab.url.includes("shorts") || tab.url.includes("v="))
+  ) {
+    setBlockedUsers(() => {
+      const data: NavigateToNewVideoMessage = {
+        messageType: "navigate-new-video",
+        data: BLOCKED_USERS!
+      };
+
+      sendMessageToTab(tab.id, {
+        messageType: "navigate-new-video",
+        data: data
+      });
+    });
+  }
+}
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 // Listeners
@@ -200,18 +227,6 @@ function onInstalled() {
 ///////////////////////////////////////////////////////////////////////////
 browser.runtime.onInstalled.addListener(onInstalled);
 
-browser.tabs.onUpdated.addListener(function (_, changeInfo, tab) {
-  if (
-    changeInfo.status === "complete" &&
-    tab.url &&
-    tab.url.includes("youtube") &&
-    (tab.url.includes("shorts") || tab.url.includes("v="))
-  ) {
-    setBlockedUsers();
-    sendMessageToTab(tab.id, {
-      messageType: "navigate-new-video"
-    });
-  }
-});
+browser.tabs.onUpdated.addListener(onUpdated);
 
 browser.runtime.onMessage.addListener(handleMessage);

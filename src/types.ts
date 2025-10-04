@@ -3,6 +3,10 @@ export interface Message {
   data?: unknown;
 }
 
+export interface Response {
+  data?: unknown;
+}
+
 export interface ContextMenuMessage extends Message {
   readonly messageType: "context-menu";
   tabId?: number;
@@ -20,7 +24,7 @@ export interface BlockUserMessage extends Message {
 
 export interface NavigateToNewVideoMessage extends Message {
   readonly messageType: "navigate-new-video";
-  data?: null;
+  data: Set<UserRecord>;
 }
 
 export interface CommentInfo {
