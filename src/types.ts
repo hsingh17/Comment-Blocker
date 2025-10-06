@@ -3,10 +3,6 @@ export interface Message {
   data?: unknown;
 }
 
-export interface Response {
-  data?: unknown;
-}
-
 export interface ContextMenuMessage extends Message {
   readonly messageType: "context-menu";
   tabId?: number;

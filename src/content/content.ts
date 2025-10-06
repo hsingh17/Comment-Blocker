@@ -162,20 +162,43 @@ function commentAdded(target: Element, mutation: MutationRecord) {
 
 function repliesShown(target: Element) {
   return (
-    target.id === "expander-contents" &&
+    target.id === "contents" &&
     target.className.includes("ytd-comment-replies-renderer") &&
     target.checkVisibility()
   );
 }
 
+function getBodyElementsFromReplies(replies: Element): HTMLDivElement[] {
+  const comments = replies?.querySelectorAll("ytd-comment-view-model");
+  const bodyElements: HTMLDivElement[] = [];
+
+  if (!comments) {
+    return bodyElements;
+  }
+
+  for (const content of comments) {
+    const body = content.querySelector("#body") as HTMLDivElement;
+    if (body) {
+      bodyElements.push(body);
+    }
+  }
+
+  return bodyElements;
+}
+
 function mutationObserverCallback(mutations: MutationRecord[]) {
   for (const mutation of mutations) {
     const target = mutation.target as Element;
+    let bodyElements: HTMLDivElement[] = [];
 
     if (commentAdded(target, mutation)) {
-      console.log(target, "comment");
+      bodyElements = Array.of(
+        ...target.querySelectorAll("#body")
+      ) as HTMLDivElement[];
+      console.log(bodyElements);
     } else if (repliesShown(target)) {
-      console.log(target, "replies");
+      bodyElements = getBodyElementsFromReplies(target);
+      console.log(bodyElements);
     }
   }
 }
