@@ -18,9 +18,19 @@ export interface BlockUserMessage extends Message {
   data: UserInfo;
 }
 
+export interface CheckBlockedUsersMessage extends Message {
+  readonly messageType: "check-blocked-users";
+  data: string[];
+}
+
+export interface CheckBlockedUsersResponse {
+  username: string;
+  blocked: boolean;
+}
+
 export interface NavigateToNewVideoMessage extends Message {
   readonly messageType: "navigate-new-video";
-  data: Set<UserRecord>;
+  data: Set<string>;
 }
 
 export interface CommentInfo {

@@ -1,5 +1,7 @@
 import { YT_EMOJIS } from "../constants";
 import type {
+  CheckBlockedUsersMessage,
+  CheckBlockedUsersResponse,
   CommentRecord,
   ContextMenuMessage,
   Message,
@@ -50,7 +52,7 @@ let CONTEXT_MENU_MSG: ContextMenuMessage | null;
 
 let DB: IDBDatabase;
 
-let BLOCKED_USERS: Set<UserRecord> | null;
+let BLOCKED_USERS: Set<string> | null;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -69,7 +71,8 @@ function setBlockedUsers(successCallback: () => void) {
   const index = userObjStore.index("blockedInd");
   const indexQuery = index.getAll("Y");
   indexQuery.onsuccess = () => {
-    BLOCKED_USERS = new Set(indexQuery.result);
+    const userRecords: UserRecord[] = indexQuery.result;
+    BLOCKED_USERS = new Set(userRecords.map((user) => user.username));
     successCallback();
   };
 }
@@ -144,12 +147,32 @@ function handleContextMenuMessage(
   browser.contextMenus.update(BLOCK_USER_CTX_MENU_PROPS.id!, updateProps);
 }
 
+function checkBlockedUsers(
+  message: CheckBlockedUsersMessage
+): CheckBlockedUsersResponse[] {
+  const usernames = message.data as string[];
+  const ret: CheckBlockedUsersResponse[] = [];
+
+  for (const username of usernames) {
+    ret.push({
+      username: username,
+      blocked: BLOCKED_USERS ? BLOCKED_USERS.has(username) : false
+    });
+  }
+
+  return ret;
+}
+
 function handleMessage(
   message: Message,
-  sender: browser.runtime.MessageSender
+  sender: browser.runtime.MessageSender,
+  respond: (response: unknown) => void
 ) {
   if (message.messageType === "context-menu") {
     handleContextMenuMessage(message as ContextMenuMessage, sender);
+  } else if (message.messageType === "check-blocked-users") {
+    const response = checkBlockedUsers(message as CheckBlockedUsersMessage);
+    respond(response);
   }
 }
 

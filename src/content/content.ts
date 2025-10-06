@@ -9,11 +9,16 @@ if (typeof browser === "undefined") {
 // Globals
 ///////////////////////////////////////////////////////////////////////////
 
-import type { BlockUserMessage, ContextMenuMessage, Message } from "../types";
+import type {
+  BlockUserMessage,
+  CheckBlockedUsersMessage,
+  CheckBlockedUsersResponse,
+  ContextMenuMessage,
+  Message
+} from "../types";
 
 ///////////////////////////////////////////////////////////////////////////
 const EMOJI_REGEX = /\p{Emoji}/u;
-
 let SELECTED_COMMENT: HTMLDivElement | null;
 let MUTATION_OBSERVER: MutationObserver | null;
 
@@ -187,19 +192,37 @@ function getBodyElementsFromReplies(replies: Element): HTMLDivElement[] {
 }
 
 function mutationObserverCallback(mutations: MutationRecord[]) {
+  const bodyElements: HTMLDivElement[] = [];
+  // TODO: Clean this function up
   for (const mutation of mutations) {
     const target = mutation.target as Element;
-    let bodyElements: HTMLDivElement[] = [];
 
     if (commentAdded(target, mutation)) {
-      bodyElements = Array.of(
-        ...target.querySelectorAll("#body")
-      ) as HTMLDivElement[];
-      console.log(bodyElements);
+      bodyElements.push(target.querySelector("#body") as HTMLDivElement);
     } else if (repliesShown(target)) {
-      bodyElements = getBodyElementsFromReplies(target);
-      console.log(bodyElements);
+      bodyElements.push(...getBodyElementsFromReplies(target));
     }
+  }
+
+  const usernames: string[] = [];
+  for (const bodyElement of bodyElements) {
+    const info = extractUserInfoFromBodyElement(bodyElement);
+    if (info?.username) {
+      usernames.push(info.username);
+    }
+  }
+
+  if (usernames && usernames.length > 0) {
+    const message: CheckBlockedUsersMessage = {
+      messageType: "check-blocked-users",
+      data: usernames
+    };
+
+    browser.runtime
+      .sendMessage(message)
+      .then((res: CheckBlockedUsersResponse) => {
+        console.log("response:", res);
+      });
   }
 }
 

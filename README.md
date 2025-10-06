@@ -41,9 +41,9 @@
     - callback will remove comments from blocked users
 - click replies button
   - block any replies from blocked users
-- block comment context menu action
+- block comment (context menu action)
   - remove single comment thread or reply
-- block user
+- block user (context menu action)
   - if blocking user from thread -> delete thread
   - if blocking from reply -> block any replies in that thread
   - after the above, run thru the comments (and their replies if visible) that are on page and remove any from the user
