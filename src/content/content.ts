@@ -190,10 +190,8 @@ function getBodyElementsFromReplies(replies: Element): HTMLDivElement[] {
 
   return bodyElements;
 }
-
-function mutationObserverCallback(mutations: MutationRecord[]) {
+function getMutatedBodyElements(mutations: MutationRecord[]): HTMLDivElement[] {
   const bodyElements: HTMLDivElement[] = [];
-  // TODO: Clean this function up
   for (const mutation of mutations) {
     const target = mutation.target as Element;
 
@@ -204,26 +202,37 @@ function mutationObserverCallback(mutations: MutationRecord[]) {
     }
   }
 
+  return bodyElements;
+}
+
+async function checkForBlockedUsers(
+  usernames: string[]
+): Promise<CheckBlockedUsersResponse[]> {
+  const message: CheckBlockedUsersMessage = {
+    messageType: "check-blocked-users",
+    data: usernames
+  };
+
+  return await browser.runtime.sendMessage(message);
+}
+
+async function mutationObserverCallback(mutations: MutationRecord[]) {
+  const mutatedBodyElements = getMutatedBodyElements(mutations);
   const usernames: string[] = [];
-  for (const bodyElement of bodyElements) {
+
+  for (const bodyElement of mutatedBodyElements) {
     const info = extractUserInfoFromBodyElement(bodyElement);
     if (info?.username) {
       usernames.push(info.username);
     }
   }
 
-  if (usernames && usernames.length > 0) {
-    const message: CheckBlockedUsersMessage = {
-      messageType: "check-blocked-users",
-      data: usernames
-    };
-
-    browser.runtime
-      .sendMessage(message)
-      .then((res: CheckBlockedUsersResponse) => {
-        console.log("response:", res);
-      });
+  if (!usernames || usernames.length <= 0) {
+    return;
   }
+
+  const res = await checkForBlockedUsers(usernames);
+  console.log(res);
 }
 
 function attachObserverToPage() {
