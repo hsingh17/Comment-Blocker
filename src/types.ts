@@ -30,7 +30,7 @@ export interface CheckBlockedUsersResponse {
 
 export interface NavigateToNewVideoMessage extends Message {
   readonly messageType: "navigate-new-video";
-  data: Set<string>;
+  data?: unknown;
 }
 
 export interface CommentInfo {

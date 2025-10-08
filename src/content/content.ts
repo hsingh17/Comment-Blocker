@@ -125,7 +125,8 @@ function onMouseDown(ev: MouseEvent) {
   sendMessageAndSetSelected(message, body);
 }
 
-function removeBodyElement(bodyElement: HTMLDivElement | null) {
+function removeBodyElement(bodyElement: HTMLDivElement | undefined | null) {
+  // TODO: Add togglable feature for either hiding or removing comment entirely
   if (!bodyElement) {
     return;
   }
@@ -205,6 +206,22 @@ function getMutatedBodyElements(mutations: MutationRecord[]): HTMLDivElement[] {
   return bodyElements;
 }
 
+function mapUsernameToBodyElement(
+  bodyElements: HTMLDivElement[]
+): Map<string, HTMLDivElement> {
+  const userToBodyElementMap: Map<string, HTMLDivElement> = new Map();
+
+  for (const bodyElement of bodyElements) {
+    const info = extractUserInfoFromBodyElement(bodyElement);
+    const username = info?.username;
+    if (username) {
+      userToBodyElementMap.set(username, bodyElement);
+    }
+  }
+
+  return userToBodyElementMap;
+}
+
 async function checkForBlockedUsers(
   usernames: string[]
 ): Promise<CheckBlockedUsersResponse[]> {
@@ -218,21 +235,22 @@ async function checkForBlockedUsers(
 
 async function mutationObserverCallback(mutations: MutationRecord[]) {
   const mutatedBodyElements = getMutatedBodyElements(mutations);
-  const usernames: string[] = [];
+  const userToBodyElementMap = mapUsernameToBodyElement(mutatedBodyElements);
 
-  for (const bodyElement of mutatedBodyElements) {
-    const info = extractUserInfoFromBodyElement(bodyElement);
-    if (info?.username) {
-      usernames.push(info.username);
-    }
-  }
-
-  if (!usernames || usernames.length <= 0) {
+  if (!userToBodyElementMap || userToBodyElementMap.size <= 0) {
     return;
   }
 
-  const res = await checkForBlockedUsers(usernames);
-  console.log(res);
+  const res = await checkForBlockedUsers(
+    Array.from(userToBodyElementMap.keys())
+  );
+
+  for (const user of res) {
+    if (user.blocked) {
+      const bodyElement = userToBodyElementMap.get(user.username);
+      removeBodyElement(bodyElement);
+    }
+  }
 }
 
 function attachObserverToPage() {

@@ -5,7 +5,6 @@ import type {
   CommentRecord,
   ContextMenuMessage,
   Message,
-  NavigateToNewVideoMessage,
   UserRecord
 } from "../types";
 
@@ -231,14 +230,8 @@ function onUpdated(
     (tab.url.includes("shorts") || tab.url.includes("v="))
   ) {
     setBlockedUsers(() => {
-      const data: NavigateToNewVideoMessage = {
-        messageType: "navigate-new-video",
-        data: BLOCKED_USERS!
-      };
-
       sendMessageToTab(tab.id, {
-        messageType: "navigate-new-video",
-        data: data
+        messageType: "navigate-new-video"
       });
     });
   }
